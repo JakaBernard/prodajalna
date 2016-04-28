@@ -199,7 +199,7 @@ var vrniRacune = function(callback) {
 streznik.post('/prijava', function(zahteva, odgovor) {
   var form = new formidable.IncomingForm();
   
-  form.parse(zahteva, function (napaka1, polja, datoteke) {
+  form.parse(zahteva, function (napaka1, polja, datoteke) {//ocitno so vrednosti forme v teli stvari: "polja"
     var napaka2 = false;
     try {
       var stmt = pb.prepare("\
@@ -211,11 +211,30 @@ streznik.post('/prijava', function(zahteva, odgovor) {
       //TODO: add fields and finalize
       //stmt.run("", "", "", "", "", "", "", "", "", "", "", 3); 
       //stmt.finalize();
+      stmt.run(polja.FirstName, polja.LastName, polja.Company, polja.Address, polja.City, polja.State, polja.Country, polja.PostalCode, polja.Phone, polja.Fax, polja.Email, 3); 
+      stmt.finalize();
     } catch (err) {
       napaka2 = true;
     }
-  
-    odgovor.end();
+    var outPrint = "";
+    if(napaka2) {
+      outPrint = "Prišlo je do napake pri registraciji nove stranke. Prosim preverite vnešene podatke in poskusite znova.";
+    } else {
+      outPrint = "Stranka je bila uspešno registrirana.";
+    }
+    //console.log(polja); <--- vrne neke vrste seznam vnešenih stvari
+    //console.log("----------------to so bila polja--------------------");
+    //console.log(datoteke); <--- prazno
+    //console.log("-----------to so bile datoteke---------");
+    
+    vrniStranke(function(napaka2, stranke) {//isto kot pri streznik.get(/prijava)
+      vrniRacune(function(napaka3, racuni) {
+        odgovor.render('prijava', {sporocilo: outPrint, seznamStrank : stranke, seznamRacunov : racuni});
+      });
+        
+    });
+    
+    //odgovor.end(); <--- pokvari stvari
   });
 })
 
